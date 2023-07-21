@@ -23,6 +23,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,6 +36,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.Placeholder
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,16 +50,18 @@ import com.example.currencyconverterapp.ui.theme.VeryGray
 import com.example.currencyconverterapp.ui.theme.ButtonPressedGray
 
 @Composable
-fun SearchScreen(navController: NavController, name: String, price: Float,){
+fun SearchScreen(navController: NavController, name: String, price: Float){
+    var totalSum = remember {mutableStateOf(0F)}
+    var amount = remember {mutableStateOf(0F)}
     Column(
         modifier = Modifier
             .fillMaxWidth()
     ) {
         SearchTopBar(name)
         PriceBar(name,price, Modifier.align(Alignment.CenterHorizontally))
-        InputFeilds(name)
-        NumPadSection(Modifier.align(Alignment.CenterHorizontally))
-        BuyButton(name, price)
+        InputFeilds(name, totalSum, price, amount)
+        NumPadSection(Modifier.align(Alignment.CenterHorizontally), totalSum,price, amount)
+        BuyButton(name, totalSum.value)
 
     }
 }
@@ -100,11 +104,7 @@ fun PriceBar(name: String, price: Float, modifier: Modifier){
 }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun InputFeilds(name: String) {
-    var reciveValue by remember {
-        mutableStateOf("")
-    }
-
+fun InputFeilds(name: String, totalSum: MutableState<Float>, price: Float, amount: MutableState<Float>) {
     Column {
         Box(
             modifier = Modifier
@@ -130,8 +130,10 @@ fun InputFeilds(name: String) {
                     )
                 }
                 TextField(
-                    value = reciveValue,
-                    onValueChange = { reciveValue = it },
+                    value = amount.toString(),
+                    onValueChange = {
+                        amount.value = it.toFloat()
+                        totalSum.value = amount.value*price  },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     colors = TextFieldDefaults.textFieldColors(
                         containerColor = Transparent
@@ -167,15 +169,18 @@ fun InputFeilds(name: String) {
                     .weight(1f)
                     .align(Alignment.CenterVertically)) {
                     Text(
-                        text = "Receive",
+                        text = "Buy for",
                         fontSize = 12.sp,
                         color = LightBlack,
                         maxLines = 1
                     )
                 }
                 TextField(
-                    value = reciveValue,
-                    onValueChange = { reciveValue = it },
+                    value = totalSum.value.toString(),
+                    onValueChange = {
+                        totalSum.value = it.toFloat()
+                        amount.value = totalSum.value/price
+                                    },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     colors = TextFieldDefaults.textFieldColors(
                         containerColor = Transparent
@@ -187,7 +192,7 @@ fun InputFeilds(name: String) {
                     .weight(0.4f)
                     .align(Alignment.CenterVertically)) {
                     Text(
-                        text = "$name",
+                        text = "USD",
                         fontSize = 12.sp,
                         color = LightBlack,
                         maxLines = 1
@@ -198,7 +203,7 @@ fun InputFeilds(name: String) {
     }
 }
 @Composable
-fun NumPadSection(modifier: Modifier){
+fun NumPadSection(modifier: Modifier,totalSum: MutableState<Float>, price: Float, amount: MutableState<Float>){
     LazyVerticalGrid(
         columns = GridCells.Fixed(3), modifier = modifier
             .padding(top = 16.dp)
@@ -224,7 +229,7 @@ fun NumPadItem( i: Int){
 
     Box(modifier = Modifier
         .size(48.dp)
-        .clickable { }){
+        .clickable {  }){
         Text(text = "$i", textAlign = TextAlign.Center, fontSize = 32.sp, modifier = Modifier.align(Alignment.Center))
     }
 }
@@ -252,14 +257,14 @@ fun DeleteItem(){
 }
 @Composable
 fun BuyButton(name: String, amount: Float){
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp).size(128.dp), verticalArrangement = Arrangement.SpaceEvenly) {
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp).size(64.dp), verticalArrangement = Arrangement.SpaceEvenly) {
         Text(text = "This service doesnt include any fees", fontSize = 16.sp, color = VeryGray, textAlign = TextAlign.Center, modifier = Modifier
             .fillMaxWidth()
             .align(
                 Alignment.CenterHorizontally
             ))
         Box(modifier = Modifier.background(LightBlack).clip(RoundedCornerShape(32.dp))){
-            Text(text = "Buy $amount $name", fontSize = 24.sp, color = BGWhite, textAlign = TextAlign.Center, modifier = Modifier
+            Text(text = "Buy $name for $amount USD", fontSize = 18.sp, color = BGWhite, textAlign = TextAlign.Center, modifier = Modifier
                 .fillMaxWidth()
                 .align(
                     Alignment.Center
