@@ -1,42 +1,46 @@
  package com.example.currencyconverterapp
 
+import android.content.Context
 import android.os.Bundle
+import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.rememberNavController
+import com.example.currencyconverterapp.RetrofitClient.exchangeRatesApiService
+import com.example.currencyconverterapp.ui.Currency
 
 import com.example.currencyconverterapp.ui.theme.CurrencyConverterAppTheme
 import com.example.currencyconverterapp.ui.Navigation
 import com.example.currencyconverterapp.ui.SearchScreen
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
  class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Example usage in a Coroutine scope (make sure to use Dispatchers.IO or similar for network calls)
-        lifecycleScope.launch {
-            try {
-                val symbol = "AAPL" // Replace with the stock symbol you want to retrieve data for
-                val startDate = 1626096000L // Replace with the start date timestamp (e.g., in seconds)
-                val endDate = 1626278400L // Replace with the end date timestamp (e.g., in seconds)
-
-                val response = RetrofitClient.yahooFinanceApi.getHistoricalData(symbol, startDate, endDate)
-                println(response)
-                // Process the response
-            } catch (e: Exception) {
-                // Handle exceptions
-            }
-        }
         setContent {
             CurrencyConverterAppTheme {
-                val navController = rememberNavController()
-                SearchScreen(navController =  navController, "name", 10F)
-                /*Navigation()*/
+                val viewModel =  viewModel<MainViewModel>(
+                    factory = object : ViewModelProvider.Factory{
+                        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                            return MainViewModel(applicationContext) as T
+                        }
+                    }
+                )
+                Navigation(viewModel = viewModel)
             }
         }
     }

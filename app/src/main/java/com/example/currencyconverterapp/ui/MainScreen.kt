@@ -11,6 +11,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -24,9 +26,11 @@ import androidx.compose.ui.unit.sp
 import com.example.currencyconverterapp.R
 import androidx.navigation.NavController
 import com.example.currencyconverterapp.ui.theme.*
+import kotlinx.coroutines.flow.StateFlow
 
 @Composable
-fun MainScreen(navController: NavController){
+fun MainScreen(navController: NavController, currencyFlow: StateFlow<List<Currency>>){
+    val currencyList by currencyFlow.collectAsState()
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -38,22 +42,11 @@ fun MainScreen(navController: NavController){
             SortElement("Trend %", Sort.TREND_PERCENTAGE)
         )
         SortBar(Modifier.align(Alignment.CenterHorizontally),list)
-        val list2 = listOf(
-            Currency("Bitcoin","bitcoin",1000.00F,false,10.0F,100.00F),
-            Currency("Bitcoin","bitcoin",1000.00F,false,10.0F,100.00F),
-            Currency("Bitcoin","bitcoin",1000.00F,false,10.0F,100.00F),
-            Currency("Bitcoin","bitcoin",1000.00F,false,10.0F,100.00F),
-            Currency("Bitcoin","bitcoin",1000.00F,false,10.0F,100.00F),
-            Currency("Bitcoin","bitcoin",1000.00F,false,10.0F,100.00F),
-            Currency("Bitcoin","bitcoin",1000.00F,false,10.0F,100.00F),
-            Currency("Bitcoin","bitcoin",1000.00F,false,10.0F,100.00F),
-            Currency("Bitcoin","bitcoin",1000.00F,false,10.0F,100.00F),
-            Currency("Bitcoin","bitcoin",1000.00F,false,10.0F,100.00F),
-            Currency("Bitcoin","bitcoin",1000.00F,false,10.0F,100.00F),
-            Currency("Bitcoin","bitcoin",1000.00F,false,10.0F,100.00F),
-            Currency("Bitcoin","bitcoin",1000.00F,false,10.0F,100.00F)
-        )
-        CurrencySection(list2, navController)
+
+/*        val list2 = listOf(
+            Currency("Bitcoin",R.drawable.dollar,1000.00F,*//*false,10.0F,100.00F*//*)
+        )*/
+        CurrencySection(currencyList, navController)
     }
 
 
@@ -132,7 +125,7 @@ fun CurrencySection(currencies: List<Currency>, navController: NavController){
         .padding(horizontal = 8.dp)
         .fillMaxWidth()){
         items(currencies.size){item->
-            CurrencyItem(currencyItem = currencies[item]) {  navController.navigate(Screen.CalculatorScreen.route) }
+            CurrencyItem(currencyItem = currencies[item]) {  navController.navigate(Screen.CalculatorScreen.withArgs(currencies[item].name,"${currencies[item].price}")) }
         }
     }
 }
@@ -140,13 +133,17 @@ fun CurrencySection(currencies: List<Currency>, navController: NavController){
 fun CurrencyItem(currencyItem: Currency, navigateToScreen: () -> Unit) {
     Column (modifier = Modifier
         .padding(bottom = 16.dp)){
-        Row(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp).clickable { navigateToScreen() }) {
+        Row(modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp)
+            .clickable { navigateToScreen() }) {
             Image(
                 painter = painterResource(id = R.drawable.dollar),
                 contentDescription = null,
                 modifier = Modifier
                     .size(32.dp)
-                    .align(Alignment.CenterVertically).clickable {  }
+                    .align(Alignment.CenterVertically)
+                    .clickable { }
             )
             Box(
                 modifier = Modifier
@@ -163,19 +160,19 @@ fun CurrencyItem(currencyItem: Currency, navigateToScreen: () -> Unit) {
                         verticalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(text = currencyItem.name, fontSize = 16.sp, color = LightBlack)
-                        Text(text = currencyItem.anotherPrice.toString(), fontSize = 16.sp, color = LighterBlack)
+                        Text(text = (currencyItem.price/10).toString(), fontSize = 16.sp, color = LighterBlack)
                     }
                     Column (
                         verticalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = currencyItem.trendProcentage.toString() + "%",
+                            text = (currencyItem.price/100).toString() + "%",
                             fontSize = 16.sp,
-                            color = if (currencyItem.trend) GreenTrend else RedTrend,
+                            color = if (true /*currencyItem.trend*/) GreenTrend else RedTrend,
                             textAlign = TextAlign.End
                         )
                         Text(
-                            text = currencyItem.anotherPrice.toString(),
+                            text = currencyItem.price.toString(),
                             fontSize = 16.sp,
                             color = LighterBlack,
                             textAlign = TextAlign.End
