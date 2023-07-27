@@ -3,6 +3,7 @@ package com.example.currencyconverterapp
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.runtime.MutableState
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
@@ -30,7 +31,9 @@ import kotlin.math.absoluteValue
 
 class MainViewModel(context: Context): ViewModel() {
     val context = context
+    private val tag = "MAIN_VIEWMODEL"
     private val _data = MutableStateFlow<List<Currency>>(emptyList())
+    private var currentCurrencyList : MutableList<Currency> = mutableListOf()
     val data: StateFlow<List<Currency>> get() = _data.asStateFlow()
 
     init {
@@ -46,6 +49,49 @@ class MainViewModel(context: Context): ViewModel() {
         val remaining = entriesList.drop(2).map { it.key to it.value }
         return firstFive to remaining
     }
+    fun insertDigit(amount: MutableState<Float>, digit: Int) {
+        val amountAsString = amount.value.toString()
+
+        // Remove any trailing ".0" from the amount string (if present)
+        val trimmedAmount = if (amountAsString.endsWith(".0")) {
+            amountAsString.dropLast(2)
+        } else {
+            amountAsString
+        }
+
+        // Append the digit to the trimmed amount string
+        val newAmountString = "$trimmedAmount$digit"
+
+        // Convert the new amount string back to a float and update the state
+        amount.value = newAmountString.toFloat()
+    }
+    fun deleteDigit(amount: MutableState<Float>) {
+        if (amount.value == 0.0F) {
+            // If the amount is already 0.0F, do nothing
+            return
+        }
+
+        val amountAsString = amount.value.toString()
+
+        // Remove any trailing ".0" from the amount string (if present)
+        val trimmedAmount = if (amountAsString.endsWith(".0")) {
+            amountAsString.dropLast(2)
+        } else {
+            amountAsString
+        }
+
+        if (trimmedAmount.length <= 1) {
+            // If the trimmed amount is less than or equal to 1 character (excluding the minus sign),
+            // set the amount to 0.0F
+            amount.value = 0.0F
+        } else {
+            // Remove the last character from the trimmed amount string and convert it back to a float
+            val newAmountString = trimmedAmount.dropLast(1)
+            amount.value = newAmountString.toFloat()
+        }
+    }
+
+
 
 
     private fun getTrend(json: String?):Float?{
@@ -180,13 +226,7 @@ class MainViewModel(context: Context): ViewModel() {
                                     val newCurrency = Currency(symbol,R.drawable.dollar,rate, trendPercentage>0, trendPercentage, trendPercentage.absoluteValue*rate)
                                     println("${newCurrency.trendProcentage}")
                                     // Get the current list of currencies
-                                    val currentCurrencies = _data.value.toMutableList()
-
-                                    // Add the new currency to the list
-                                    currentCurrencies.add(newCurrency)
-
-                                    // Update the _data MutableStateFlow with the updated list of currencies
-                                    _data.value = currentCurrencies.toList()
+                                    currentCurrencyList.add(newCurrency)
                                 }
                             } else {
                                 // Handle unsuccessful response
@@ -197,15 +237,10 @@ class MainViewModel(context: Context): ViewModel() {
                 for (currency in exchangeApiList){
                     val newCurrency = Currency(currency.first,R.drawable.dollar,currency.second, true, currency.second/1000, currency.second/10)
 
-                    // Get the current list of currencies
-                    val currentCurrencies = _data.value.toMutableList()
-
-                    // Add the new currency to the list
-                    currentCurrencies.add(newCurrency)
-
                     // Update the _data MutableStateFlow with the updated list of currencies
-                    _data.value = currentCurrencies.toList()
+                    currentCurrencyList.add(newCurrency)
                 }
+                filterDefault()
             } catch (e: HttpException) {
                 Toast.makeText(context,"${e.response()} ${e.message()}", Toast.LENGTH_LONG).show()
             }catch (e: Exception) {
@@ -213,5 +248,14 @@ class MainViewModel(context: Context): ViewModel() {
                 Toast.makeText(context,"$e", Toast.LENGTH_LONG).show()
             }
         }
+    }
+    fun filterRate(isBiggerOrLess: Boolean){
+        if(isBiggerOrLess)
+            _data.value = currentCurrencyList.filter { currency-> currency.price>=1 }
+        else
+            _data.value = currentCurrencyList.filter { currency-> currency.price<1 }
+    }
+    fun filterDefault(){
+        _data.value = currentCurrencyList
     }
 }

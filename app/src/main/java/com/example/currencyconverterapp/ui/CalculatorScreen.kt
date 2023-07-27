@@ -33,6 +33,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.currencyconverterapp.MainViewModel
 import com.example.currencyconverterapp.R
 import com.example.currencyconverterapp.ui.theme.BGWhite
 import com.example.currencyconverterapp.ui.theme.ButtonPressedGray
@@ -41,7 +42,7 @@ import com.example.currencyconverterapp.ui.theme.Transparent
 import com.example.currencyconverterapp.ui.theme.VeryGray
 
 @Composable
-fun CalculatorScreen(navController: NavController, name: String, price: Float){
+fun CalculatorScreen(navController: NavController, viewModel: MainViewModel, name: String, price: Float){
     var totalSum = remember { mutableStateOf(0F) }
     var amount = remember { mutableStateOf(0F) }
     Column(
@@ -51,8 +52,8 @@ fun CalculatorScreen(navController: NavController, name: String, price: Float){
         SearchTopBar(name)
         PriceBar(name,price, Modifier.align(Alignment.CenterHorizontally))
         InputFeilds(name, totalSum, price, amount)
-        NumPadSection(Modifier.align(Alignment.CenterHorizontally), totalSum,price, amount)
-        BuyButton(name, totalSum.value)
+        NumPadSection(Modifier.align(Alignment.CenterHorizontally), totalSum, viewModel )
+        BuyButton(name, totalSum.value) {navController.popBackStack()}
 
     }
 }
@@ -194,37 +195,56 @@ fun InputFeilds(name: String, totalSum: MutableState<Float>, price: Float, amoun
     }
 }
 @Composable
-fun NumPadSection(modifier: Modifier, totalSum: MutableState<Float>, price: Float, amount: MutableState<Float>){
+fun NumPadSection(modifier: Modifier, amount: MutableState<Float>, viewModel: MainViewModel) {
     LazyVerticalGrid(
-        columns = GridCells.Fixed(3), modifier = modifier
+        columns = GridCells.Fixed(3),
+        modifier = modifier
             .padding(top = 16.dp)
             .fillMaxWidth()
-            .size(256.dp),  horizontalArrangement = Arrangement.SpaceEvenly, verticalArrangement = Arrangement.SpaceEvenly
-    ){
-        items(9){
-            NumPadItem(i = it+1)
+            .size(256.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalArrangement = Arrangement.SpaceEvenly
+    ) {
+        items(9) {
+            NumPadItem(i = it + 1) {
+                viewModel.insertDigit(amount, it + 1)
+            }
         }
-        item{
+        item {
             PointItem()
         }
-        item{
-            NumPadItem(i = 0)
+        item {
+            NumPadItem(i = 0) {
+                viewModel.insertDigit(amount, 0)
+            }
         }
-        item{
-            DeleteItem()
+        item {
+            DeleteItem {
+                viewModel.deleteDigit(amount)
+            }
         }
     }
 }
-@Composable
-fun NumPadItem( i: Int){
 
-    Box(modifier = Modifier
-        .size(48.dp)
-        .clickable {  }){
-        Text(text = "$i", textAlign = TextAlign.Center, fontSize = 32.sp, modifier = Modifier.align(
-            Alignment.Center))
+@Composable
+fun NumPadItem(i: Int, insertDigit: (digit: Int) -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(48.dp)
+            .clickable {
+                // Call the insertDigit function with the digit value when the item is clicked
+                insertDigit(i)
+            }
+    ) {
+        Text(
+            text = "$i",
+            textAlign = TextAlign.Center,
+            fontSize = 32.sp,
+            modifier = Modifier.align(Alignment.Center)
+        )
     }
 }
+
 @Composable
 fun PointItem(){
 
@@ -236,11 +256,11 @@ fun PointItem(){
     }
 }
 @Composable
-fun DeleteItem(){
+fun DeleteItem(deleteDigit: ()-> Unit){
 
     Box(modifier = Modifier
         .size(48.dp)
-        .clickable { }){
+        .clickable { deleteDigit }){
         Icon(
             painter = painterResource(id = R.drawable.baseline_exit_24),
             contentDescription = "Icon 2",
@@ -249,14 +269,14 @@ fun DeleteItem(){
     }
 }
 @Composable
-fun BuyButton(name: String, amount: Float){
+fun BuyButton(name: String, amount: Float, onClick: ()-> Boolean){
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp).size(64.dp), verticalArrangement = Arrangement.SpaceEvenly) {
         Text(text = "This service doesnt include any fees", fontSize = 16.sp, color = VeryGray, textAlign = TextAlign.Center, modifier = Modifier
             .fillMaxWidth()
             .align(
                 Alignment.CenterHorizontally
             ))
-        Box(modifier = Modifier.background(LightBlack).clip(RoundedCornerShape(32.dp))){
+        Box(modifier = Modifier.background(LightBlack).clip(RoundedCornerShape(32.dp)).clickable { onClick }){
             Text(text = "Buy $name for $amount USD", fontSize = 18.sp, color = BGWhite, textAlign = TextAlign.Center, modifier = Modifier
                 .fillMaxWidth()
                 .align(

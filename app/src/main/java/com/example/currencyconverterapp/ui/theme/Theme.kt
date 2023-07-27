@@ -39,7 +39,7 @@ fun CurrencyConverterAppTheme(
     }
 
     MaterialTheme(
-        colorScheme = lightColorScheme(),
+        colorScheme = colors,
         typography = NormalText,
         content = content
     )
