@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -49,10 +50,10 @@ fun CalculatorScreen(navController: NavController, viewModel: MainViewModel, nam
         modifier = Modifier
             .fillMaxWidth()
     ) {
-        SearchTopBar(name)
+        SearchTopBar(name){ navController.popBackStack()}
         PriceBar(name,price, Modifier.align(Alignment.CenterHorizontally))
         InputFeilds(name, totalSum, price, amount)
-        NumPadSection(Modifier.align(Alignment.CenterHorizontally), totalSum, viewModel )
+        NumPadSection(Modifier.align(Alignment.CenterHorizontally), totalSum, amount, viewModel )
         BuyButton(name, totalSum.value) {navController.popBackStack()}
 
     }
@@ -60,7 +61,7 @@ fun CalculatorScreen(navController: NavController, viewModel: MainViewModel, nam
 
 
 @Composable
-fun SearchTopBar(name: String){
+fun SearchTopBar(name: String, goBack: () -> Unit ){
 
     Row(
         modifier = Modifier
@@ -77,7 +78,7 @@ fun SearchTopBar(name: String){
             Icon(
                 painter = painterResource(id = R.drawable.baseline_exit_24),
                 contentDescription = "Icon 2",
-                modifier = Modifier.clickable {  }
+                modifier = Modifier.clickable { goBack() }
             )
         }
     }
@@ -195,7 +196,7 @@ fun InputFeilds(name: String, totalSum: MutableState<Float>, price: Float, amoun
     }
 }
 @Composable
-fun NumPadSection(modifier: Modifier, amount: MutableState<Float>, viewModel: MainViewModel) {
+fun NumPadSection(modifier: Modifier,totalSum: MutableState<Float>,  amount: MutableState<Float>, viewModel: MainViewModel) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
         modifier = modifier
@@ -207,7 +208,7 @@ fun NumPadSection(modifier: Modifier, amount: MutableState<Float>, viewModel: Ma
     ) {
         items(9) {
             NumPadItem(i = it + 1) {
-                viewModel.insertDigit(amount, it + 1)
+                viewModel.insertDigit(totalSum, amount, it)
             }
         }
         item {
@@ -215,12 +216,12 @@ fun NumPadSection(modifier: Modifier, amount: MutableState<Float>, viewModel: Ma
         }
         item {
             NumPadItem(i = 0) {
-                viewModel.insertDigit(amount, 0)
+                viewModel.insertDigit(totalSum, amount, 0)
             }
         }
         item {
             DeleteItem {
-                viewModel.deleteDigit(amount)
+                viewModel.deleteDigit(totalSum, amount)
             }
         }
     }
@@ -269,19 +270,36 @@ fun DeleteItem(deleteDigit: ()-> Unit){
     }
 }
 @Composable
-fun BuyButton(name: String, amount: Float, onClick: ()-> Boolean){
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp).size(64.dp), verticalArrangement = Arrangement.SpaceEvenly) {
-        Text(text = "This service doesnt include any fees", fontSize = 16.sp, color = VeryGray, textAlign = TextAlign.Center, modifier = Modifier
-            .fillMaxWidth()
-            .align(
-                Alignment.CenterHorizontally
-            ))
-        Box(modifier = Modifier.background(LightBlack).clip(RoundedCornerShape(32.dp)).clickable { onClick }){
-            Text(text = "Buy $name for $amount USD", fontSize = 18.sp, color = BGWhite, textAlign = TextAlign.Center, modifier = Modifier
+fun BuyButton(name: String, amount: Float, onClick: () -> Boolean) {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(top = 32.dp).size(64.dp).padding(horizontal = 32.dp),
+        verticalArrangement = Arrangement.SpaceEvenly
+    ) {
+        Text(
+            text = "This service doesn't include any fees",
+            fontSize = 16.sp,
+            color = VeryGray,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
                 .fillMaxWidth()
-                .align(
-                    Alignment.Center
-                )
+                .align(Alignment.CenterHorizontally)
+        )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(LightBlack)
+                .padding(horizontal = 16.dp)
+                .clickable { onClick() }, // Invoke the lambda here
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "Buy $name for $amount USD",
+                fontSize = 18.sp,
+                color = BGWhite,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
             )
         }
     }

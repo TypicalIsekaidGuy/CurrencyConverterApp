@@ -49,23 +49,33 @@ class MainViewModel(context: Context): ViewModel() {
         val remaining = entriesList.drop(2).map { it.key to it.value }
         return firstFive to remaining
     }
-    fun insertDigit(amount: MutableState<Float>, digit: Int) {
+    //Redact this function
+    fun insertDigit(totalSum: MutableState<Float>, amount: MutableState<Float>, digit: Int) {
         val amountAsString = amount.value.toString()
 
-        // Remove any trailing ".0" from the amount string (if present)
-        val trimmedAmount = if (amountAsString.endsWith(".0")) {
-            amountAsString.dropLast(2)
-        } else {
-            amountAsString
+        var trimmedAmount = ""
+        if(amountAsString.startsWith("0.")){
+            if(digit!=0) {
+                trimmedAmount = if (amountAsString == "0.0") {
+                    "0.$digit"
+                }else{
+                    "$digit.${amountAsString.drop(2)}"
+                }
+                amount.value = trimmedAmount.toFloat()
+                totalSum.value =
+                return
+            }
         }
 
-        // Append the digit to the trimmed amount string
-        val newAmountString = "$trimmedAmount$digit"
 
-        // Convert the new amount string back to a float and update the state
-        amount.value = newAmountString.toFloat()
+        // Append the digit to the trimmed amount string
+        val newAmountString = "$digit${amount.value}"
+
+        if(newAmountString.length<16){
+            amount.value = newAmountString.toFloat()
+        }
     }
-    fun deleteDigit(amount: MutableState<Float>) {
+    fun deleteDigit(totalSum: MutableState<Float>, amount: MutableState<Float>) {
         if (amount.value == 0.0F) {
             // If the amount is already 0.0F, do nothing
             return
