@@ -1,6 +1,7 @@
 package com.example.currencyconverterapp
 
 import android.content.Context
+import android.nfc.Tag
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.runtime.MutableState
@@ -9,9 +10,16 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
 import com.example.currencyconverterapp.ui.Currency
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.Call
@@ -34,10 +42,39 @@ class MainViewModel(context: Context): ViewModel() {
     private val tag = "MAIN_VIEWMODEL"
     private val _data = MutableStateFlow<List<Currency>>(emptyList())
     private var currentCurrencyList : MutableList<Currency> = mutableListOf()
+
+
+    private val _searchText = MutableStateFlow("")
+    val searchText = _searchText.asStateFlow()
+
+    private val _isSearching = MutableStateFlow(false)
+    val isSearching = _isSearching.asStateFlow()
     val data: StateFlow<List<Currency>> get() = _data.asStateFlow()
 
     init {
         fetchDataFromNetwork()
+    }
+    val currencies = searchText
+        .debounce(1000L)
+        .onEach { _isSearching.update { true } }
+        .combine(_data) { text, currency ->
+            if(text.isBlank()) {
+                currency
+            } else {
+                delay(2000L)
+                currency.filter {
+                    it.doesMatchSearchQuery(text)
+                }
+            }
+        }
+        .onEach { _isSearching.update { false } }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5000),
+            _data.value
+        )
+    fun onSearchTextChange(text: String) {
+        _searchText.value = text
     }
     fun getFirstFiveElements(map: Map<String, Float>): List<Pair<String, Float>> {
         return map.toList().take(2)
@@ -50,7 +87,7 @@ class MainViewModel(context: Context): ViewModel() {
         return firstFive to remaining
     }
     //Redact this function
-    fun insertDigit(totalSum: MutableState<Float>, amount: MutableState<Float>, digit: Int) {
+    fun insertDigit(amount: MutableState<Float>, digit: Int): Boolean {
         val amountAsString = amount.value.toString()
 
         var trimmedAmount = ""
@@ -62,8 +99,7 @@ class MainViewModel(context: Context): ViewModel() {
                     "$digit.${amountAsString.drop(2)}"
                 }
                 amount.value = trimmedAmount.toFloat()
-                totalSum.value =
-                return
+                return true
             }
         }
 
@@ -71,34 +107,36 @@ class MainViewModel(context: Context): ViewModel() {
         // Append the digit to the trimmed amount string
         val newAmountString = "$digit${amount.value}"
 
-        if(newAmountString.length<16){
+        if(newAmountString.length<10){
             amount.value = newAmountString.toFloat()
+            return true
         }
+        return false
     }
-    fun deleteDigit(totalSum: MutableState<Float>, amount: MutableState<Float>) {
+    fun deleteDigit( amount: MutableState<Float>):Boolean {
         if (amount.value == 0.0F) {
             // If the amount is already 0.0F, do nothing
-            return
+            return false
         }
 
         val amountAsString = amount.value.toString()
 
-        // Remove any trailing ".0" from the amount string (if present)
-        val trimmedAmount = if (amountAsString.endsWith(".0")) {
-            amountAsString.dropLast(2)
-        } else {
-            amountAsString
-        }
+        var trimmedAmount = ""
+        if(amountAsString.startsWith("0.")){
+                trimmedAmount = if (amountAsString == "0.0") {
+                    return false
+                }else{
+                    "0.0"
+                }
+                amount.value = trimmedAmount.toFloat()
+                return true
 
-        if (trimmedAmount.length <= 1) {
-            // If the trimmed amount is less than or equal to 1 character (excluding the minus sign),
-            // set the amount to 0.0F
-            amount.value = 0.0F
-        } else {
-            // Remove the last character from the trimmed amount string and convert it back to a float
-            val newAmountString = trimmedAmount.dropLast(1)
-            amount.value = newAmountString.toFloat()
         }
+        Log.d("SSSsssssssss", amount.value.toString())
+
+
+        amount.value = amountAsString.drop(1).toFloat()
+        return true
     }
 
 
@@ -150,27 +188,7 @@ class MainViewModel(context: Context): ViewModel() {
         }
         return null
     }
-    private suspend fun fetchCurrencyData(symbol: String,baseUrl: String,endpoint: String,apiKey: String,client: OkHttpClient,exchangeRates:  Map<String, Float>): Currency? {
-        val apiUrl = "$baseUrl?$endpoint&symbol=$symbol&apikey=$apiKey"
-        val request = Request.Builder().url(apiUrl).build()
 
-        val response = withContext(Dispatchers.IO) {
-            client.newCall(request).execute()
-        }
-
-        if (response.isSuccessful) {
-            val jsonResponse = response.body()?.string()
-            val trendPercentage = getTrend(jsonResponse)
-            if (trendPercentage != null) {
-                val rate = exchangeRates[symbol] ?: 0f
-                return Currency(symbol, R.drawable.dollar, rate, trendPercentage > 0, trendPercentage, trendPercentage.absoluteValue * rate)
-            }
-        } else {
-            println("Request failed: ${response.code()} - ${response.message()}")
-        }
-
-        return null
-    }
 
     private fun fetchDataFromNetwork() {
 
@@ -260,12 +278,39 @@ class MainViewModel(context: Context): ViewModel() {
         }
     }
     fun filterRate(isBiggerOrLess: Boolean){
+        var tempList = currentCurrencyList
         if(isBiggerOrLess)
-            _data.value = currentCurrencyList.filter { currency-> currency.price>=1 }
+            _data.value = tempList.filter { currency-> currency.price>=1 }
         else
-            _data.value = currentCurrencyList.filter { currency-> currency.price<1 }
+            _data.value = tempList.filter { currency-> currency.price<1 }
     }
     fun filterDefault(){
         _data.value = currentCurrencyList
     }
+    fun sortByName(){
+
+        var tempList = currentCurrencyList
+        _data.value = tempList.sortedBy { it.name }
+    }
+    fun sortByPrice(){
+
+        var tempList = currentCurrencyList
+        _data.value = tempList.sortedBy { it.price }
+    }
+
+    fun sortByTrend(){
+        var tempList = currentCurrencyList
+        _data.value = tempList.sortedWith(compareByDescending<Currency> { it.trend }.thenBy { it.price })
+    }
+
+    fun sortByPercentage(){
+        var tempList = currentCurrencyList
+        _data.value = tempList.sortedBy { it.trendProcentage }
+    }
+
+    fun sortByDefault(){
+        // Assuming you have a separate variable to hold the original unsorted list
+        _data.value = currentCurrencyList
+    }
+
 }

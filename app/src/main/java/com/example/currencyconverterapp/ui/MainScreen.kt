@@ -35,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -54,23 +55,27 @@ import kotlinx.coroutines.launch
 fun MainScreen(navController: NavController, currencyFlow: StateFlow<List<Currency>>, viewModel: MainViewModel) {
     val tag = "MAIN_SCREEN"
     val currencyList by currencyFlow.collectAsState()
+/*    val currencyList by viewModel.currencies.collectAsState()*/
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     // Coroutine scope to use for opening the drawer from an event
     val coroutineScope = rememberCoroutineScope()
 
-    // State to track if the overlay is shown
-    var showOverlay by remember { mutableStateOf(false) }
+    val searchText by viewModel.searchText.collectAsState()
+    val isSearching by viewModel.isSearching.collectAsState()
 
+
+
+    // Thoose Drawers are designed to peek a bit from the side where they supposed to be opened, in order to get rif of such behaviour another screen is needed
     ModalNavigationDrawer(
-        gesturesEnabled = drawerState.isOpen,
         drawerState = drawerState,
+
         drawerContent = {
             Box(modifier = Modifier.background(BGWhite)){
 
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(start = 48.dp, top = 48.dp, end = 128.dp)
+                        .padding(top = 48.dp)
                 ) {
                     Text(
                         text = "Filters",
@@ -79,13 +84,15 @@ fun MainScreen(navController: NavController, currencyFlow: StateFlow<List<Curren
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
                     )
-                    Column() {
+                    Column {
                         val radioOptions = listOf("Rate > 1", "Rate < 1")
                         var selectedOption by remember { mutableStateOf("")}
                         radioOptions.forEach{option->
                             RadioButtonOption(text = option, selected = selectedOption==option) {
-                                if(selectedOption==option)
+                                if(selectedOption==option){
                                     selectedOption = ""
+                                    viewModel.filterDefault()
+                                }
                                 else {
                                     selectedOption = option
                                     viewModel.filterRate(option=="Rate > 1")
@@ -97,45 +104,36 @@ fun MainScreen(navController: NavController, currencyFlow: StateFlow<List<Curren
             }
 
         },
-        content = {
-            // Main content of your screen goes here
-            // For example, a scaffold with a top app bar
-            Scaffold(
-                content = {
-                    Column(
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        TopBar(
-                            onDrawerIconClick = {
-                                coroutineScope.launch {
-                                    drawerState.open()
-                                    // Show the overlay when the drawer is opened
-                                    showOverlay = true
-                                }
-                            }
-                        )
-                        val list = listOf<SortElement>(
-                            SortElement("Price", Sort.PRICE),
-                            SortElement("Trend", Sort.TREND),
-                            SortElement("Trend %", Sort.TREND_PERCENTAGE)
-                        )
-                        SortBar(Modifier.align(Alignment.CenterHorizontally), list)
+        content =        {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp)
+            ) {
+                TopBar(
+                    onDrawerIconClick = {
+                        coroutineScope.launch {
+                            drawerState.open()
+                        }
+                    },
+                    searchText,
+                    { viewModel.onSearchTextChange(searchText) })
 
-                        /*        val list2 = listOf(
-                                    Currency("Bitcoin",R.drawable.dollar,1000.00F,*//*false,10.0F,100.00F*//*)
-        )*/
-                        CurrencySection(currencyList, navController)
-                    }
-                }
-            )
+                val list = listOf(
+                    SortElement("Name", Sort.NAME, { viewModel.sortByName() }) { viewModel.sortByDefault() },
+                    SortElement("Price", Sort.PRICE, { viewModel.sortByPrice() }) { viewModel.sortByDefault() },
+                    SortElement("Trend", Sort.TREND, {  viewModel.sortByTrend() }) {viewModel.sortByDefault()  },
+                    SortElement("Trend %", Sort.TREND_PERCENTAGE, { viewModel.sortByPercentage() }) { viewModel.sortByDefault() }
+                )
+                SortBar(Modifier.align(Alignment.CenterHorizontally), list)
+                CurrencySection(currencyList, navController)
+            }
         }
+
     )
 
 }
 
-fun onSelect(){
-
-}
 @Composable
 fun RadioButtonOption(
     text: String,
@@ -164,7 +162,7 @@ fun RadioButtonOption(
 }
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopBar(onDrawerIconClick: () ->  Unit){
+fun TopBar(onDrawerIconClick: () ->  Unit, searchText: String, onValueChange: ()-> Unit){
     var text by remember{ mutableStateOf("") }
     Row(
         modifier = Modifier
@@ -177,7 +175,8 @@ fun TopBar(onDrawerIconClick: () ->  Unit){
             contentDescription = "Icon 1",
             modifier = Modifier.clickable { onDrawerIconClick() }
         )
-        TextField(value = text, onValueChange ={text = it}  )
+        TextField(value = searchText, onValueChange ={text = it
+            onValueChange}  )
         Icon(
             painter = painterResource(id = R.drawable.baseline_search_24),
             contentDescription = "Icon 2",
@@ -223,7 +222,15 @@ fun SortItem(sortItem: SortElement, pickedId: MutableState<Int>){
         Box(modifier = Modifier
             .clip(CircleShape)
             .background(if (pickedId.value == sortItem.sortBy.ordinal) ButtonPressedGray else ButtonNotPressedGray)
-            .clickable { pickedId.value = sortItem.sortBy.ordinal }
+            .clickable {
+                if (pickedId.value == sortItem.sortBy.ordinal) {
+                    pickedId.value = -1
+                    sortItem.onClickDefault()
+                } else {
+                    pickedId.value = sortItem.sortBy.ordinal
+                    sortItem.onClick()
+                }
+            }
             .padding(horizontal = 12.dp, vertical = 4.dp)){
             Text(fontSize = 16.sp, color = LightBlack, text = sortItem.name)
         }
@@ -275,7 +282,7 @@ fun CurrencyItem(currencyItem: Currency, navigateToScreen: () -> Unit) {
                         Text(text = (currencyItem.anotherPrice).toString(), fontSize = 16.sp, color = LighterBlack)
                     }
                     Column (
-                        verticalArrangement = Arrangement.SpaceBetween
+                        verticalArrangement = Arrangement.SpaceBetween, horizontalAlignment = Alignment.End
                     ) {
                         Text(
                             text = (currencyItem.trendProcentage).toString() + "%",
@@ -295,7 +302,7 @@ fun CurrencyItem(currencyItem: Currency, navigateToScreen: () -> Unit) {
         }
         Spacer(
             modifier = Modifier
-                .fillMaxWidth()
+                .size(width = 316.dp, height = 2.dp)
                 .height(2.dp)
                 .background(color = VeryGray)
         )

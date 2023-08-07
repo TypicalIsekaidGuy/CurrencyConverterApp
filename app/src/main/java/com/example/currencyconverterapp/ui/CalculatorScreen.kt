@@ -53,12 +53,14 @@ fun CalculatorScreen(navController: NavController, viewModel: MainViewModel, nam
         SearchTopBar(name){ navController.popBackStack()}
         PriceBar(name,price, Modifier.align(Alignment.CenterHorizontally))
         InputFeilds(name, totalSum, price, amount)
-        NumPadSection(Modifier.align(Alignment.CenterHorizontally), totalSum, amount, viewModel )
+        NumPadSection(Modifier.align(Alignment.CenterHorizontally), totalSum, amount, viewModel, { calculateTotalSum(totalSum,amount, price) } )
         BuyButton(name, totalSum.value) {navController.popBackStack()}
 
     }
 }
-
+fun calculateTotalSum(totalSum: MutableState<Float>, amount: MutableState<Float>, price: Float){
+    totalSum.value = amount.value * price
+}
 
 @Composable
 fun SearchTopBar(name: String, goBack: () -> Unit ){
@@ -196,7 +198,7 @@ fun InputFeilds(name: String, totalSum: MutableState<Float>, price: Float, amoun
     }
 }
 @Composable
-fun NumPadSection(modifier: Modifier,totalSum: MutableState<Float>,  amount: MutableState<Float>, viewModel: MainViewModel) {
+fun NumPadSection(modifier: Modifier,totalSum: MutableState<Float>,  amount: MutableState<Float>, viewModel: MainViewModel, calculateTotalSum: ()-> Unit) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
         modifier = modifier
@@ -208,7 +210,9 @@ fun NumPadSection(modifier: Modifier,totalSum: MutableState<Float>,  amount: Mut
     ) {
         items(9) {
             NumPadItem(i = it + 1) {
-                viewModel.insertDigit(totalSum, amount, it)
+                val isSuccesful = viewModel.insertDigit( amount, it)
+                if(isSuccesful)
+                    calculateTotalSum()
             }
         }
         item {
@@ -216,12 +220,16 @@ fun NumPadSection(modifier: Modifier,totalSum: MutableState<Float>,  amount: Mut
         }
         item {
             NumPadItem(i = 0) {
-                viewModel.insertDigit(totalSum, amount, 0)
+                val isSuccesful = viewModel.insertDigit( amount, it)
+                if(isSuccesful)
+                    calculateTotalSum()
             }
         }
         item {
             DeleteItem {
-                viewModel.deleteDigit(totalSum, amount)
+                val isSuccesful = viewModel.deleteDigit( amount)
+                if(isSuccesful)
+                    calculateTotalSum()
             }
         }
     }
@@ -261,7 +269,7 @@ fun DeleteItem(deleteDigit: ()-> Unit){
 
     Box(modifier = Modifier
         .size(48.dp)
-        .clickable { deleteDigit }){
+        .clickable { deleteDigit() }){
         Icon(
             painter = painterResource(id = R.drawable.baseline_exit_24),
             contentDescription = "Icon 2",

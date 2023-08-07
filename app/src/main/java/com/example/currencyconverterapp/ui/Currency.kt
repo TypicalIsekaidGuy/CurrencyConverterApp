@@ -9,4 +9,17 @@ data class Currency (
     val trend: Boolean,
     val trendProcentage: Float,
     val anotherPrice: Float
-)
+){
+    fun doesMatchSearchQuery(query: String): Boolean {
+        val matchingCombinations = mutableListOf<String>()
+
+        for (i in 1..name.length) {
+            matchingCombinations.add(name.substring(0, i))
+        }
+
+        return matchingCombinations.any {
+            it.contains(query, ignoreCase = true)
+        }
+    }
+
+}
