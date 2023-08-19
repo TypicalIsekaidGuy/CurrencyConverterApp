@@ -37,7 +37,7 @@ import java.util.Locale
 import kotlin.math.absoluteValue
 
 
-class MainViewModel(context: Context): ViewModel() {
+class MainViewModel(context: Context): ViewModel(),NumPadInterface  {
     val context = context
     private val tag = "MAIN_VIEWMODEL"
     private val _data = MutableStateFlow<List<Currency>>(emptyList())
