@@ -55,13 +55,17 @@ class MainViewModel(context: Context): ViewModel() {
         fetchDataFromNetwork()
     }
     val currencies = searchText
+/*
         .debounce(1000L)
+*/
         .onEach { _isSearching.update { true } }
         .combine(_data) { text, currency ->
             if(text.isBlank()) {
                 currency
             } else {
+/*
                 delay(2000L)
+*/
                 currency.filter {
                     it.doesMatchSearchQuery(text)
                 }
@@ -74,6 +78,7 @@ class MainViewModel(context: Context): ViewModel() {
             _data.value
         )
     fun onSearchTextChange(text: String) {
+        Log.d(tag,"$text")
         _searchText.value = text
     }
     fun getFirstFiveElements(map: Map<String, Float>): List<Pair<String, Float>> {

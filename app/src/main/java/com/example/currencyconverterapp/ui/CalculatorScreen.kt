@@ -12,11 +12,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -36,11 +38,8 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.currencyconverterapp.MainViewModel
 import com.example.currencyconverterapp.R
-import com.example.currencyconverterapp.ui.theme.BGWhite
-import com.example.currencyconverterapp.ui.theme.ButtonPressedGray
-import com.example.currencyconverterapp.ui.theme.LightBlack
 import com.example.currencyconverterapp.ui.theme.Transparent
-import com.example.currencyconverterapp.ui.theme.VeryGray
+import com.example.currencyconverterapp.ui.theme.CurrencyConverterAppTheme
 
 @Composable
 fun CalculatorScreen(navController: NavController, viewModel: MainViewModel, name: String, price: Float){
@@ -71,10 +70,10 @@ fun SearchTopBar(name: String, goBack: () -> Unit ){
             .fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(text = "Buy $name", fontSize = 24.sp, color = LightBlack, textAlign = TextAlign.Center)
+        Text(text = "Buy $name", fontSize = 24.sp, color = MaterialTheme.colorScheme.tertiary, textAlign = TextAlign.Center)
         Box(modifier = Modifier
             .clip(CircleShape)
-            .background(VeryGray)
+            .background(MaterialTheme.colorScheme.secondary)
             .align(Alignment.CenterVertically)
             .padding(8.dp)){
             Icon(
@@ -90,7 +89,7 @@ fun PriceBar(name: String, price: Float, modifier: Modifier){
     Box(modifier = modifier
         .fillMaxWidth()
         .padding(top = 32.dp)){
-        Text(text = "1 $name = $price USD", fontSize = 16.sp, color = LightBlack, textAlign = TextAlign.Center, modifier = Modifier
+        Text(text = "1 $name = $price USD", fontSize = 16.sp, color = MaterialTheme.colorScheme.tertiary, textAlign = TextAlign.Center, modifier = Modifier
             .fillMaxWidth()
             .align(
                 Alignment.Center
@@ -106,7 +105,7 @@ fun InputFeilds(name: String, totalSum: MutableState<Float>, price: Float, amoun
                 .padding(16.dp)
                 .padding(top = 32.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(color = VeryGray)
+                .background(color = MaterialTheme.colorScheme.secondary)
         ) {
             Row(
                 horizontalArrangement = Arrangement.SpaceEvenly,
@@ -120,7 +119,7 @@ fun InputFeilds(name: String, totalSum: MutableState<Float>, price: Float, amoun
                     Text(
                         text = "Receive",
                         fontSize = 12.sp,
-                        color = LightBlack,
+                        color = MaterialTheme.colorScheme.tertiary,
                         maxLines = 1
                     )
                 }
@@ -131,7 +130,9 @@ fun InputFeilds(name: String, totalSum: MutableState<Float>, price: Float, amoun
                         totalSum.value = amount.value*price  },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     colors = TextFieldDefaults.textFieldColors(
-                        containerColor = Transparent
+                        containerColor = Transparent,
+
+                        textColor = MaterialTheme.colorScheme.tertiary
                     ),
                     textStyle = TextStyle(textAlign = TextAlign.End),
                     modifier = Modifier.weight(2f) // Set the weight of the TextField to 2
@@ -142,7 +143,7 @@ fun InputFeilds(name: String, totalSum: MutableState<Float>, price: Float, amoun
                     Text(
                         text = "$name",
                         fontSize = 12.sp,
-                        color = LightBlack,
+                        color = MaterialTheme.colorScheme.tertiary,
                         maxLines = 1
                     )
                 }
@@ -152,7 +153,7 @@ fun InputFeilds(name: String, totalSum: MutableState<Float>, price: Float, amoun
             modifier = Modifier
                 .padding(16.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(color = ButtonPressedGray)
+                .background(color = MaterialTheme.colorScheme.onPrimary)
         ) {
             Row(
                 horizontalArrangement = Arrangement.SpaceEvenly,
@@ -166,7 +167,7 @@ fun InputFeilds(name: String, totalSum: MutableState<Float>, price: Float, amoun
                     Text(
                         text = "Buy for",
                         fontSize = 12.sp,
-                        color = LightBlack,
+                        color = MaterialTheme.colorScheme.tertiary,
                         maxLines = 1
                     )
                 }
@@ -178,7 +179,8 @@ fun InputFeilds(name: String, totalSum: MutableState<Float>, price: Float, amoun
                     },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     colors = TextFieldDefaults.textFieldColors(
-                        containerColor = Transparent
+                        containerColor = Transparent,
+                        textColor = MaterialTheme.colorScheme.tertiary
                     ),
                     textStyle = TextStyle(textAlign = TextAlign.End),
                     modifier = Modifier.weight(2f) // Set the weight of the TextField to 2
@@ -189,7 +191,7 @@ fun InputFeilds(name: String, totalSum: MutableState<Float>, price: Float, amoun
                     Text(
                         text = "USD",
                         fontSize = 12.sp,
-                        color = LightBlack,
+                        color = MaterialTheme.colorScheme.tertiary,
                         maxLines = 1
                     )
                 }
@@ -249,7 +251,8 @@ fun NumPadItem(i: Int, insertDigit: (digit: Int) -> Unit) {
             text = "$i",
             textAlign = TextAlign.Center,
             fontSize = 32.sp,
-            modifier = Modifier.align(Alignment.Center)
+            modifier = Modifier.align(Alignment.Center),
+            color = MaterialTheme.colorScheme.tertiary
         )
     }
 }
@@ -261,7 +264,8 @@ fun PointItem(){
         .size(48.dp)
         .clickable { }){
         Text(text = ".", textAlign = TextAlign.Center, fontSize = 32.sp, modifier = Modifier.align(
-            Alignment.BottomCenter))
+            Alignment.BottomCenter),
+            color = MaterialTheme.colorScheme.tertiary)
     }
 }
 @Composable
@@ -273,20 +277,25 @@ fun DeleteItem(deleteDigit: ()-> Unit){
         Icon(
             painter = painterResource(id = R.drawable.baseline_exit_24),
             contentDescription = "Icon 2",
-            modifier = Modifier.align(Alignment.Center)
+            modifier = Modifier.align(Alignment.Center),
+            tint = MaterialTheme.colorScheme.tertiary
         )
     }
 }
 @Composable
 fun BuyButton(name: String, amount: Float, onClick: () -> Boolean) {
     Column(
-        modifier = Modifier.fillMaxWidth().padding(top = 32.dp).size(64.dp).padding(horizontal = 32.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 32.dp)
+            .size(64.dp)
+            .padding(horizontal = 32.dp),
         verticalArrangement = Arrangement.SpaceEvenly
     ) {
         Text(
             text = "This service doesn't include any fees",
             fontSize = 16.sp,
-            color = VeryGray,
+            color = MaterialTheme.colorScheme.tertiary,
             textAlign = TextAlign.Center,
             modifier = Modifier
                 .fillMaxWidth()
@@ -297,7 +306,7 @@ fun BuyButton(name: String, amount: Float, onClick: () -> Boolean) {
                 .fillMaxWidth()
                 .height(48.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(LightBlack)
+                .background(MaterialTheme.colorScheme.tertiary)
                 .padding(horizontal = 16.dp)
                 .clickable { onClick() }, // Invoke the lambda here
             contentAlignment = Alignment.Center
@@ -305,7 +314,7 @@ fun BuyButton(name: String, amount: Float, onClick: () -> Boolean) {
             Text(
                 text = "Buy $name for $amount USD",
                 fontSize = 18.sp,
-                color = BGWhite,
+                color = MaterialTheme.colorScheme.primary,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )

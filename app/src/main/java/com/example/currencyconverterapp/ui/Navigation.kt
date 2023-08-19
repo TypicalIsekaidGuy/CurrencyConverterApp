@@ -25,8 +25,5 @@ fun Navigation(viewModel: MainViewModel){
             val price = backStackEntry.arguments?.getFloat("price") as Float
             CalculatorScreen(navController =  navController, viewModel, name, price)
         }
-        composable(route = Screen.SearchScreen.route){
-            SearchScreen(navController =  navController)
-        }
     }
 }

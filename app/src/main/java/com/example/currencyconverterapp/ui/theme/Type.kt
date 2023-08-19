@@ -1,4 +1,3 @@
-/*
 package com.example.currencyconverterapp.ui.theme
 
 import androidx.compose.material3.Typography
@@ -14,4 +13,4 @@ val NormalText = Typography(
         fontSize = 12.sp,
         color = LightBlack
     )
-)*/
+)

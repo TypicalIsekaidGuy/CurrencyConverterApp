@@ -1,4 +1,3 @@
-/*
 package com.example.currencyconverterapp.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -8,15 +7,27 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 
 private val DarkColorPalette = darkColorScheme(
-    primary = ButtonNotPressedGray,
-    onPrimary = ButtonPressedGray,
-    secondary = LightBlack
+    primary = LightBlack,
+    background = LightBlack,
+    onPrimary = ButtonPressedDarkGray,
+    secondary = VeryDarkGray,
+    onSecondary = ButtonNotPressedarkGray,
+    tertiary = DarkerOrange,
+    onTertiary = DarkOrange,
+    surface = GreenTrend,
+    onSurface = RedTrend
 )
 
 private val LightColorPalette = lightColorScheme(
-    primary = ButtonNotPressedGray,
+    primary = BGWhite,
+    background = BGWhite,
     onPrimary = ButtonPressedGray,
-    secondary = LightBlack
+    secondary = VeryGray,
+    onSecondary = ButtonNotPressedGray,
+    tertiary = LightBlack,
+    onTertiary = LighterBlack,
+    surface = GreenTrend,
+    onSurface = RedTrend
 
 
 
@@ -39,4 +50,3 @@ fun CurrencyConverterAppTheme(
         content = content
     )
 }
-*/
