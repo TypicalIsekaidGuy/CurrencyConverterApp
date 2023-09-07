@@ -1,6 +1,7 @@
 package com.example.currencyconverterapp.ui
 
 import android.annotation.SuppressLint
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -8,15 +9,18 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -29,7 +33,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -44,10 +51,9 @@ import kotlinx.coroutines.launch
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(navController: NavController, currencyFlow: StateFlow<List<Currency>>, viewModel: MainViewModel) {
+fun MainScreen(navController: NavController, viewModel: MainViewModel) {
     val tag = "MAIN_SCREEN"
-    val currencyList by currencyFlow.collectAsState()
-/*    val currencyList by viewModel.currencies.collectAsState()*/
+    val currencyList = viewModel.data.collectAsState()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     // Coroutine scope to use for opening the drawer from an event
     val coroutineScope = rememberCoroutineScope()
@@ -62,41 +68,42 @@ fun MainScreen(navController: NavController, currencyFlow: StateFlow<List<Curren
         drawerState = drawerState,
         scrimColor = MaterialTheme.colorScheme.background,
         drawerContent = {
-            Box(modifier = Modifier.background(MaterialTheme.colorScheme.background)){
+            ModalDrawerSheet() {
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(top = 48.dp)
-                ) {
-                    Text(
-                        text = "Filters",
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth(),
-                        color = MaterialTheme.colorScheme.tertiary
-                    )
-                    Column {
-                        val radioOptions = listOf("Rate > 1", "Rate < 1")
-                        var selectedOption by remember { mutableStateOf("")}
-                        radioOptions.forEach{option->
-                            RadioButtonOption(text = option, selected = selectedOption==option) {
-                                if(selectedOption==option){
-                                    selectedOption = ""
-                                    viewModel.filterDefault()
-                                }
-                                else {
-                                    selectedOption = option
-                                    viewModel.filterRate(option=="Rate > 1")
+                Box(modifier = Modifier.background(MaterialTheme.colorScheme.background)){
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(top = 48.dp)
+                    ) {
+                        Text(
+                            text = "Filters",
+                            fontSize = 32.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
+                            color = MaterialTheme.colorScheme.tertiary
+                        )
+                        Column {
+                            val radioOptions = listOf("Rate > 1", "Rate < 1")
+                            var selectedOption by remember { mutableStateOf("")}
+                            radioOptions.forEach{option->
+                                RadioButtonOption(text = option, selected = selectedOption==option) {
+                                    if(selectedOption==option){
+                                        selectedOption = ""
+                                        viewModel.filterDefault()
+                                    }
+                                    else {
+                                        selectedOption = option
+                                        viewModel.filterRate(option=="Rate > 1")
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-
-        },
+            },
         content =        {
             Column(
                 modifier = Modifier
@@ -120,7 +127,7 @@ fun MainScreen(navController: NavController, currencyFlow: StateFlow<List<Curren
                     SortElement("Trend %", Sort.TREND_PERCENTAGE, { viewModel.sortByPercentage() }) { viewModel.sortByDefault() }
                 )
                 SortBar(Modifier.align(Alignment.CenterHorizontally), list)
-                CurrencySection(currencyList, navController)
+                CurrencySection(currencyList.value, navController)
             }
         }
 
@@ -144,7 +151,7 @@ fun RadioButtonOption(
         RadioButton(
             selected = selected,
             onClick = onSelect,
-            colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.surface)
+            colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.tertiary)
         )
 
         Text(
@@ -159,6 +166,8 @@ fun RadioButtonOption(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TopBar(onDrawerIconClick: () ->  Unit, searchText: StateFlow<String>, viewModel: MainViewModel){
+    var isSearchVisible by remember { mutableStateOf(false) }
+
     Row(
         modifier = Modifier
             .padding(start = 24.dp, end = 24.dp, top = 16.dp)
@@ -171,14 +180,62 @@ fun TopBar(onDrawerIconClick: () ->  Unit, searchText: StateFlow<String>, viewMo
             contentDescription = "Icon 1",
             modifier = Modifier.clickable { onDrawerIconClick() }
         )
-        TextField(value = searchText.value, onValueChange ={newSearchText -> viewModel.onSearchTextChange(newSearchText)}  )
+
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp))
+                .background(MaterialTheme.colorScheme.background)
+                .size(height = 64.dp, width = 256.dp)
+        ) {
+            val text = ""
+            Layout(
+                modifier = Modifier.fillMaxSize(),
+                content = {
+                    if (isSearchVisible) {
+/*                        TextField(
+                            value = searchText.value,
+                            onValueChange = { newSearchText: String ->
+                                viewModel.onSearchTextChange(newSearchText)
+                                text = newSearchText
+                            },
+                            shape = RoundedCornerShape(20.dp),
+                            modifier = Modifier
+                                .padding(horizontal = 16.dp)
+                                .height(56.dp)
+                                .fillMaxWidth(),
+
+                            textStyle = TextStyle(color = MaterialTheme.colorScheme.tertiary),
+                            shape = RoundedCornerShape(topStart = 8.dp, bottomStart = 8.dp),
+                            colors = TextFieldDefaults.textFieldColors(
+                                containerColor = MaterialTheme.colorScheme.secondary,
+                                cursorColor = MaterialTheme.colorScheme.tertiary,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent
+                            )
+                        )*/
+                    }
+                }
+            ) { measurables, constraints ->
+                val textFieldPlaceable = measurables.firstOrNull()?.measure(constraints)
+                layout(
+                    width = constraints.maxWidth,
+                    height = textFieldPlaceable?.height ?: 0
+                ) {
+                    textFieldPlaceable?.place(0, 0)
+                }
+            }
+        }
+
+
         Icon(
             painter = painterResource(id = R.drawable.baseline_search_24),
             tint = MaterialTheme.colorScheme.secondary,
             contentDescription = "Icon 2",
-            modifier = Modifier.clickable {  }
+            modifier = Modifier.clickable { isSearchVisible = !isSearchVisible }
         )
     }
+
+
 }
 @Composable
 fun SortBar(modifier: Modifier, sortList: List<SortElement>){

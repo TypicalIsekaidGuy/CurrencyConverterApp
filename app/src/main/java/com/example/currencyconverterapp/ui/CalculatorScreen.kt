@@ -103,7 +103,7 @@ fun InputFeilds(name: String, totalSum: MutableState<Float>, price: Float, amoun
         Box(
             modifier = Modifier
                 .padding(16.dp)
-                .padding(top = 32.dp)
+                .padding(top = 16.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .background(color = MaterialTheme.colorScheme.secondary)
         ) {
@@ -204,7 +204,7 @@ fun NumPadSection(modifier: Modifier,totalSum: MutableState<Float>,  amount: Mut
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
         modifier = modifier
-            .padding(top = 16.dp)
+            .padding(top = 8.dp)
             .fillMaxWidth()
             .size(256.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,

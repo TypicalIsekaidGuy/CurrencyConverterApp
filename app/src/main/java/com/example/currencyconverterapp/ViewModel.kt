@@ -37,12 +37,10 @@ import java.util.Locale
 import kotlin.math.absoluteValue
 
 
-class MainViewModel(context: Context): ViewModel(),NumPadInterface  {
-    val context = context
+class MainViewModel(): ViewModel(),NumPadInterface  {
     private val tag = "MAIN_VIEWMODEL"
     private val _data = MutableStateFlow<List<Currency>>(emptyList())
-    private var currentCurrencyList : MutableList<Currency> = mutableListOf()
-
+    val currentCurrencyList: MutableList<Currency> = mutableListOf()
 
     private val _searchText = MutableStateFlow("")
     val searchText = _searchText.asStateFlow()
@@ -54,31 +52,9 @@ class MainViewModel(context: Context): ViewModel(),NumPadInterface  {
     init {
         fetchDataFromNetwork()
     }
-    val currencies = searchText
-/*
-        .debounce(1000L)
-*/
-        .onEach { _isSearching.update { true } }
-        .combine(_data) { text, currency ->
-            if(text.isBlank()) {
-                currency
-            } else {
-/*
-                delay(2000L)
-*/
-                currency.filter {
-                    it.doesMatchSearchQuery(text)
-                }
-            }
-        }
-        .onEach { _isSearching.update { false } }
-        .stateIn(
-            viewModelScope,
-            SharingStarted.WhileSubscribed(5000),
-            _data.value
-        )
+
     fun onSearchTextChange(text: String) {
-        Log.d(tag,"$text")
+        Log.d(tag, text)
         _searchText.value = text
     }
     fun getFirstFiveElements(map: Map<String, Float>): List<Pair<String, Float>> {
@@ -92,7 +68,7 @@ class MainViewModel(context: Context): ViewModel(),NumPadInterface  {
         return firstFive to remaining
     }
     //Redact this function
-    fun insertDigit(amount: MutableState<Float>, digit: Int): Boolean {
+    override fun insertDigit(amount: MutableState<Float>, digit: Int): Boolean {
         val amountAsString = amount.value.toString()
 
         var trimmedAmount = ""
@@ -118,7 +94,7 @@ class MainViewModel(context: Context): ViewModel(),NumPadInterface  {
         }
         return false
     }
-    fun deleteDigit( amount: MutableState<Float>):Boolean {
+    override fun deleteDigit( amount: MutableState<Float>):Boolean {
         if (amount.value == 0.0F) {
             // If the amount is already 0.0F, do nothing
             return false
@@ -274,11 +250,20 @@ class MainViewModel(context: Context): ViewModel(),NumPadInterface  {
                     currentCurrencyList.add(newCurrency)
                 }
                 filterDefault()
+                // After fetching, filter the data based on the search text
+/*                val filteredData = if (_searchText.value.isBlank()) {
+                    // If the search text is empty, show all data
+                    currentCurrencyList.toList()
+                } else {
+                    currentCurrencyList.filter { currency ->
+                        currency.name.contains(_searchText.value, ignoreCase = true)
+                    }
+                }
+                _data.value = filteredData*/
+
             } catch (e: HttpException) {
-                Toast.makeText(context,"${e.response()} ${e.message()}", Toast.LENGTH_LONG).show()
             }catch (e: Exception) {
                 Log.v("SSS", "$e")
-                Toast.makeText(context,"$e", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -317,5 +302,7 @@ class MainViewModel(context: Context): ViewModel(),NumPadInterface  {
         // Assuming you have a separate variable to hold the original unsorted list
         _data.value = currentCurrencyList
     }
+
+
 
 }

@@ -1,5 +1,6 @@
  package com.example.currencyconverterapp
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Bundle
 import android.util.Log
@@ -7,6 +8,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -33,6 +35,8 @@ import kotlinx.coroutines.withContext
 
  class MainActivity : ComponentActivity() {
 
+    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+    @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -40,12 +44,13 @@ import kotlinx.coroutines.withContext
                 val viewModel =  viewModel<MainViewModel>(
                     factory = object : ViewModelProvider.Factory{
                         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                            return MainViewModel(applicationContext) as T
+                            return MainViewModel() as T
                         }
                     }
                 )
-
-                Navigation(viewModel = viewModel)
+                Scaffold() {
+                    Navigation(viewModel = viewModel)
+                }
             }
         }
     }

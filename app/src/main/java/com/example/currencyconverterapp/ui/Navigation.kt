@@ -15,7 +15,7 @@ fun Navigation(viewModel: MainViewModel){
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = Screen.MainScreen.route/*+ "/name/10F" */){
         composable(route = Screen.MainScreen.route){
-            MainScreen(navController =  navController, viewModel.data, viewModel)
+            MainScreen(navController =  navController, viewModel)
         }
         composable(route = Screen.CalculatorScreen.route + "/{name}/{price}", arguments = listOf(navArgument("name") { type = NavType.StringType },navArgument("price") { type = NavType.FloatType } )){backStackEntry ->
             if(backStackEntry.arguments?.getString("name").isNullOrEmpty()||backStackEntry.arguments?.getFloat("price")==null){
