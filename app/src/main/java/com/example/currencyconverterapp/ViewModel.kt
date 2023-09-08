@@ -38,6 +38,10 @@ import kotlin.math.absoluteValue
 
 
 class MainViewModel(): ViewModel(),NumPadInterface  {
+
+    private val _isLoading = MutableStateFlow(true)
+    val isLoading = _isLoading.asStateFlow()
+
     private val tag = "MAIN_VIEWMODEL"
     private val _data = MutableStateFlow<List<Currency>>(emptyList())
     val currentCurrencyList: MutableList<Currency> = mutableListOf()
@@ -56,6 +60,18 @@ class MainViewModel(): ViewModel(),NumPadInterface  {
     fun onSearchTextChange(text: String) {
         Log.d(tag, text)
         _searchText.value = text
+    }
+    fun onSearchChange(text: String){
+        _searchText.value= text
+        val filteredData = if (_searchText.value.isBlank()) {
+            // If the search text is empty, show all data
+            currentCurrencyList.toList()
+        } else {
+            currentCurrencyList.filter { currency ->
+                currency.name.contains(_searchText.value, ignoreCase = true)
+            }
+        }
+        _data.value = filteredData
     }
     fun getFirstFiveElements(map: Map<String, Float>): List<Pair<String, Float>> {
         return map.toList().take(2)
@@ -250,6 +266,7 @@ class MainViewModel(): ViewModel(),NumPadInterface  {
                     currentCurrencyList.add(newCurrency)
                 }
                 filterDefault()
+                _isLoading.value = false
                 // After fetching, filter the data based on the search text
 /*                val filteredData = if (_searchText.value.isBlank()) {
                     // If the search text is empty, show all data

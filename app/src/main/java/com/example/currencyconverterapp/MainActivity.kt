@@ -39,15 +39,21 @@ import kotlinx.coroutines.withContext
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val viewModel = MainViewModel()/*
+        val viewModel =  viewModel<MainViewModel>(
+            factory = object : ViewModelProvider.Factory{
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return MainViewModel() as T
+                }
+            }
+        )*/
+        installSplashScreen().apply {
+            setKeepOnScreenCondition{
+                viewModel.isLoading.value
+            }
+        }
         setContent {
             CurrencyConverterAppTheme {
-                val viewModel =  viewModel<MainViewModel>(
-                    factory = object : ViewModelProvider.Factory{
-                        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                            return MainViewModel() as T
-                        }
-                    }
-                )
                 Scaffold() {
                     Navigation(viewModel = viewModel)
                 }

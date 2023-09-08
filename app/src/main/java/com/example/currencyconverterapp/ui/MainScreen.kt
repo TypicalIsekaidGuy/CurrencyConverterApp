@@ -117,8 +117,8 @@ fun MainScreen(navController: NavController, viewModel: MainViewModel) {
                             drawerState.open()
                         }
                     },
-                    searchText,
-                    viewModel)
+                    searchText = searchText,
+                    viewModel = viewModel, onTextFieldValueChange = { viewModel.onSearchChange(searchText.value) })
 
                 val list = listOf(
                     SortElement("Name", Sort.NAME, { viewModel.sortByName() }) { viewModel.sortByDefault() },
@@ -165,8 +165,9 @@ fun RadioButtonOption(
 @SuppressLint("StateFlowValueCalledInComposition")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopBar(onDrawerIconClick: () ->  Unit, searchText: StateFlow<String>, viewModel: MainViewModel){
+fun TopBar(onDrawerIconClick: () ->  Unit, searchText: StateFlow<String>, onTextFieldValueChange: (String) ->Unit, viewModel: MainViewModel){
     var isSearchVisible by remember { mutableStateOf(false) }
+    var text by remember { mutableStateOf("") }
 
     Row(
         modifier = Modifier
@@ -187,18 +188,21 @@ fun TopBar(onDrawerIconClick: () ->  Unit, searchText: StateFlow<String>, viewMo
                 .background(MaterialTheme.colorScheme.background)
                 .size(height = 64.dp, width = 256.dp)
         ) {
-            val text = ""
+
             Layout(
                 modifier = Modifier.fillMaxSize(),
                 content = {
                     if (isSearchVisible) {
-/*                        TextField(
-                            value = searchText.value,
-                            onValueChange = { newSearchText: String ->
+                        TextField(
+                            value = text,
+                            onValueChange = {
+                                text = it
+                                viewModel.onSearchChange(text)
+                                onTextFieldValueChange(text)
+/*
                                 viewModel.onSearchTextChange(newSearchText)
-                                text = newSearchText
+*/
                             },
-                            shape = RoundedCornerShape(20.dp),
                             modifier = Modifier
                                 .padding(horizontal = 16.dp)
                                 .height(56.dp)
@@ -212,7 +216,7 @@ fun TopBar(onDrawerIconClick: () ->  Unit, searchText: StateFlow<String>, viewMo
                                 focusedIndicatorColor = Color.Transparent,
                                 unfocusedIndicatorColor = Color.Transparent
                             )
-                        )*/
+                        )
                     }
                 }
             ) { measurables, constraints ->
