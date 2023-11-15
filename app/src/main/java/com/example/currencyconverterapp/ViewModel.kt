@@ -319,7 +319,4 @@ class MainViewModel(): ViewModel(),NumPadInterface  {
         // Assuming you have a separate variable to hold the original unsorted list
         _data.value = currentCurrencyList
     }
-
-
-
 }

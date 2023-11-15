@@ -132,7 +132,6 @@ fun MainScreen(navController: NavController, viewModel: MainViewModel) {
         }
 
     )
-
 }
 
 @Composable
